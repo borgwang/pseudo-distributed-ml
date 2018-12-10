@@ -17,20 +17,18 @@ from tinynn.core.evaluator import AccEvaluator
 from tinynn.core.model import Model
 
 from config import batch_size, learning_rate, dataset_dir
-from communicator import decode_packet, encode_packet
+from communicator import decode, encode
 
 
 def get_one_hot(targets, nb_classes):
     return np.eye(nb_classes)[np.array(targets).reshape(-1)]
 
 
-class Node(object):
+class BaseNode(object):
 
     def __init__(self):
         self.nn_model = self.init_nn_model()
         self.dataset = self.load_dataset()
-
-        self.__updates = None
 
     @staticmethod
     def load_dataset():
@@ -58,13 +56,13 @@ class Node(object):
         return nn_model
 
     def update(self, params):
-        # sync with global parameters
-        self.set_params(params)
-        # local training
-        self._train_one_epoch()
+        raise NotImplementedError
+
+    def get_results(self):
+        raise NotImplementedError
 
     def _train_one_epoch(self):
-        start_params = self.get_params
+        start_params = self.get_params()
 
         iterator = BatchIterator(batch_size=batch_size)
         evaluator = AccEvaluator()
@@ -74,9 +72,10 @@ class Node(object):
             loss, grads = self.nn_model.backward(pred, batch.targets)
             self.nn_model.apply_grad(grads)
 
-        end_params = self.get_params
-        self.__updates = decode_packet(
-            encode_packet(end_params) - encode_packet(start_params))
+        end_params = self.get_params()
+        updates = decode(
+            encode(end_params) - encode(start_params))
+        return updates
 
     @property
     def get_params(self):
@@ -85,6 +84,72 @@ class Node(object):
     def set_params(self, params):
         self.nn_model.net.set_parameters(params)
 
-    @property
-    def get_updates(self):
+
+class MANode(BaseNode):
+    '''
+    Model Averaging Node
+    '''
+    def get_results(self):
+        return self.get_params()
+
+    def update(self, params):
+        # force sync with global parameters
+        self.set_params(params)
+        # local training
+        self._train_one_epoch()
+
+
+class SSGDNode(BaseNode):
+    '''
+    Synchronous SGD
+    '''
+    def __init__(self):
+        super(SSGDNode, self).__init__()
+        self.__updates = None
+
+    def get_results(self):
         return self.__updates
+
+    def update(self, params):
+        # force sync with global parameters
+        self.set_params(params)
+        # local training
+        updates = self._train_one_epoch()
+        self.__updates = updates
+
+
+class EASGDNode(BaseNode):
+    '''
+    Elastic Averaging SGD
+    See https://arxiv.org/abs/1412.6651 for details
+    '''
+    def get_results(self):
+        return self.get_params()
+
+    def update(self, params):
+        # elastic update parameters
+        self._elastic_update(params)
+        # local training
+        self._train_one_epoch()
+
+    def _elastic_update(self, params):
+        # limit the divergence local model and global model
+        grads = 2 * (encode(self.get_params()) - encode(params))
+        grads *= 0.005
+        grads = decode(grads)
+        self.nn_model.apply_grad(grads)
+
+
+class BMUFNode(BaseNode):
+    '''
+    Block-wise Model Update Filtering Node
+    see https://www.microsoft.com/en-us/research/wp-content/uploads/2016/08/0005880.pdf
+    '''
+    def get_results(self):
+        return self.get_params()
+
+    def update(self, params):
+        # force sync with global parameters
+        self.set_params(params)
+        # local training
+        self._train_one_epoch()

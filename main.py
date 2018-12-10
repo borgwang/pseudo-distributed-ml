@@ -59,13 +59,16 @@ class Master(object):
     def run(self):
         i = 0
         timer = {
+            'iter': Timer('iter'),
             'distribute': Timer('distribute'),
             'gather': Timer('gather'),
             'update': Timer('update')
         }
-        while True:
+        # while True:
+        for _ in range(args.num_epochs):
             i += 1
-            params = self.param_server.get_params
+            timer['iter'].start()
+            params = self.param_server.get_params()
             # distribute contents
             timer['distribute'].start()
             self.comm.distribute(params.copy())
@@ -73,19 +76,21 @@ class Master(object):
 
             # gather results
             timer['gather'].start()
-            all_local_results = self.comm.gather()
+            local_results = self.comm.gather()
             timer['gather'].pause()
 
             # update global params
             timer['update'].start()
-            self.param_server.update(all_local_results)
+            self.param_server.update(local_results)
             timer['update'].pause()
 
             print('---------------')
             print('{}-iteration'.format(i))
             self.param_server.evaluate()
 
-            if i % 5 == 0:
+            timer['iter'].pause()
+            timer['iter'].report()
+            if i % 10 == 0:
                 for t in timer.values():
                     t.report()
 
@@ -98,23 +103,24 @@ class Worker(object):
         self.rank = rank
 
     def run(self):
-        while True:
+        # while True:
+        for _ in range(args.num_epochs):
             # pull global params
             global_params = self.comm.pull_global_params()
             # local update
             self.node.update(global_params)
-            # local_params = self.node.get_params
-            local_updates = self.node.get_updates
+
+            local_results = self.node.get_results
 
             # push to parameter server
-            self.comm.push_local_results(local_updates)
+            self.comm.push_local_results(local_results)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--num_workers', type=int, default=1)
+    parser.add_argument('-n', '--num_workers', type=int, default=4)
     parser.add_argument('-s', '--seed', type=int, default=31, help='initial seed')
-
+    parser.add_argument('--num_epochs', type=int, default=10)
     global args
     args = parser.parse_args()
     assert args.num_workers > 0, 'Number of workers suppose to > 0.'

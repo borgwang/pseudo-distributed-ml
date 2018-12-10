@@ -4,7 +4,7 @@ import numpy as np
 from config import architecture
 
 
-def decode_packet(packet):
+def decode(packet):
     # decode 1-d array to parameters (dict)
     assert packet is not None, 'Invalid packet.'
     contents = list()
@@ -22,7 +22,7 @@ def decode_packet(packet):
     return contents
 
 
-def encode_packet(contents):
+def encode(contents):
     # encode parameters (dict) to 1-d array
     assert len(contents) > 0, 'Invalid parameters.'
     all_params = list()
@@ -53,7 +53,7 @@ class MasterComm(Communicator):
         self.worker_ids = np.arange(1, comm.Get_size())
 
     def distribute(self, global_params):
-        packet = encode_packet(global_params)
+        packet = encode(global_params)
         for worker_id in self.worker_ids:
             self._comm.Send(packet, dest=worker_id)
 
@@ -62,7 +62,7 @@ class MasterComm(Communicator):
         results = list()
         for worker_id in self.worker_ids:
             self._comm.Recv(packet, source=worker_id)
-            local_param = decode_packet(packet)
+            local_param = decode(packet)
             results.append(local_param)
         return results
 
@@ -76,9 +76,9 @@ class WorkerComm(Communicator):
     def pull_global_params(self):
         packet = np.empty(shape=self.packet_size, dtype=float)
         self._comm.Recv(packet, source=self.master_id)
-        parmas = decode_packet(packet)
+        parmas = decode(packet)
         return parmas
 
     def push_local_results(self, params):
-        packet = encode_packet(params)
+        packet = encode(params)
         self._comm.Send(packet, dest=self.master_id)
