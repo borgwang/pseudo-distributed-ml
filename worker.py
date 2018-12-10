@@ -2,7 +2,10 @@ from mpi4py import MPI
 import numpy as np
 import time
 
+from tinynn.core.nn import NeuralNet
+
 from communicator import WorkerComm
+from config import nn_architecture
 
 
 class Worker(object):
@@ -20,6 +23,7 @@ class Worker(object):
             local_params = self.node.get_params
             # push to parameter server
             self.comm.push_local_params(local_params)
+
 
 class Node(object):
 
