@@ -73,12 +73,12 @@ class Master(object):
 
             # gather results
             timer['gather'].start()
-            all_local_params = self.comm.gather()
+            all_local_results = self.comm.gather()
             timer['gather'].pause()
 
             # update global params
             timer['update'].start()
-            self.param_server.update(all_local_params)
+            self.param_server.update(all_local_results)
             timer['update'].pause()
 
             print('---------------')
@@ -103,14 +103,16 @@ class Worker(object):
             global_params = self.comm.pull_global_params()
             # local update
             self.node.update(global_params)
-            local_params = self.node.get_params
+            # local_params = self.node.get_params
+            local_updates = self.node.get_updates
+
             # push to parameter server
-            self.comm.push_local_params(local_params)
+            self.comm.push_local_results(local_updates)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--num_workers', type=int, default=2)
+    parser.add_argument('-n', '--num_workers', type=int, default=1)
     parser.add_argument('-s', '--seed', type=int, default=31, help='initial seed')
 
     global args

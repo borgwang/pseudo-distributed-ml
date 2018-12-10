@@ -5,6 +5,7 @@
 # Description: ParamServer class
 
 
+import copy
 import numpy as np
 
 from tinynn.data_processor.dataset import MNIST
@@ -17,6 +18,7 @@ from tinynn.core.evaluator import AccEvaluator
 from tinynn.core.model import Model
 
 from config import dataset_dir, architecture
+from communicator import decode_packet, encode_packet
 
 
 def get_one_hot(targets, nb_classes):
@@ -49,18 +51,19 @@ class ParamServer(object):
         nn_model.set_phase('TEST')
         return nn_model
 
-    def update(self, all_local_params):
-        # merge parameters
-        merged_params = list()
-        for i, s in enumerate(architecture):
-            layer = dict()
-            if len(s) == 0:
-                merged_params.append(layer)
-                continue
-            layer['w'] = np.mean([lp[i]['w'] for lp in all_local_params], 0)
-            layer['b'] = np.mean([lp[i]['b'] for lp in all_local_params], 0)
-            merged_params.append(layer)
-        self.nn_model.net.set_parameters(merged_params)
+    def update(self, all_local_results):
+        # merge parameters or updates
+        merged = list()
+        for local in all_local_results:
+            merged.append(encode_packet(local))
+        merged = np.mean(merged, axis=0)
+
+        # add update to parameters
+        merged += encode_packet(self.get_params)
+        merged = decode_packet(merged)
+
+        # update global parameters
+        self.set_params(merged)
 
     def evaluate(self):
         test_preds = self.nn_model.forward(self.test_x)
@@ -71,4 +74,7 @@ class ParamServer(object):
 
     @property
     def get_params(self):
-        return self.nn_model.net.get_parameters()
+        return copy.deepcopy(self.nn_model.net.get_parameters())
+
+    def set_params(self, params):
+        self.nn_model.net.set_parameters(params)
