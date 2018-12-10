@@ -1,6 +1,9 @@
 from mpi4py import MPI
 import numpy as np
 
+from config import architecture
+
+
 COMM = MPI.COMM_WORLD
 SIZE = COMM.Get_size()
 RANK = COMM.Get_rank()
@@ -11,15 +14,40 @@ class Communicator(object):
 
     def __init__(self, comm):
         self._comm = comm
+        self.packet_size = 0
+        for s in architecture:
+            if len(s) > 0:
+                self.packet_size += (s[0] * s[1] + s[1])
 
     @staticmethod
     def decode_packet(packet):
-        contents = np.reshape(packet, (3, 5))
+        # decode 1-d array to parameters (dict)
+        assert packet is not None, 'Invalid packet.'
+        contents = list()
+        pointer = 0
+        for s in architecture:
+            layer = dict()
+            if len(s) < 1:
+                contents.append(layer)
+                continue
+            layer['w'] = packet[pointer:pointer + s[0] * s[1]].reshape((s[0], s[1]))
+            pointer += s[0] * s[1]
+            layer['b'] = packet[pointer: pointer + s[1]].reshape((1, s[1]))
+            pointer += s[1]
+            contents.append(layer)
         return contents
 
     @staticmethod
     def encode_packet(contents):
-        packet = np.ravel(contents)
+        # encode parameters (dict) to 1-d array
+        assert len(contents) > 0, 'Invalid parameters.'
+        all_params = list()
+        for l in contents:
+            if len(l) == 0:
+                continue
+            all_params.append(np.ravel(l['w']))
+            all_params.append(np.ravel(l['b']))
+        packet = np.concatenate(all_params)
         return packet
 
 
@@ -34,7 +62,7 @@ class MasterComm(Communicator):
             self._comm.Send(packet, dest=worker_id)
 
     def gather(self):
-        packet = np.empty(15, dtype=float)
+        packet = np.empty(self.packet_size, dtype=float)
         results = list()
         for worker_id in self.worker_ids:
             self._comm.Recv(packet, source=worker_id)
@@ -49,7 +77,7 @@ class WorkerComm(Communicator):
         self.master_id = 0
 
     def pull_global_params(self):
-        packet = np.empty(shape=15, dtype=float)
+        packet = np.empty(shape=self.packet_size, dtype=float)
         self._comm.Recv(packet, source=self.master_id)
         parmas = self.decode_packet(packet)
         return parmas
