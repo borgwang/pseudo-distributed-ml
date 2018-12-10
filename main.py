@@ -111,7 +111,6 @@ class Worker(object):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--num_workers', type=int, default=2)
-    parser.add_argument('-t', '--num_trails', type=int, help='trials per worker', default=4)
     parser.add_argument('-s', '--seed', type=int, default=31, help='initial seed')
 
     global args
