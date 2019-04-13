@@ -77,7 +77,6 @@ class BaseNode(object):
             encode(end_params) - encode(start_params))
         return updates
 
-    @property
     def get_params(self):
         return copy.deepcopy(self.nn_model.net.get_parameters())
 
