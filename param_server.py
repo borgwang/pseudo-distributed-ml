@@ -73,6 +73,7 @@ class MAParamServer(BaseParamServer):
     '''
     Model Averaging Parameter Server
     '''
+
     def update(self, local_params):
         # averaging parameters
         params = list()
@@ -88,6 +89,7 @@ class SSGDParamServer(BaseParamServer):
     '''
     Synchronous SGD Parameter Server
     '''
+
     def update(self, local_grads):
         # averaging gradients
         grads = list()
@@ -107,6 +109,7 @@ class EASGDParamServer(BaseParamServer):
     Elastic Averaging SGD Parameter Server
     See https://arxiv.org/abs/1412.6651 for details
     '''
+
     def __init__(self):
         super(EASGDParamServer, self).__init__()
         self._param_momentum = None
@@ -135,6 +138,7 @@ class BMUFParamServer(BaseParamServer):
     Block-wise Model Update Filtering ParamServer
     see https://www.microsoft.com/en-us/research/wp-content/uploads/2016/08/0005880.pdf
     '''
+
     def __init__(self):
         super(EASGDParamServer, self).__init__()
         self._grad_momentum = None

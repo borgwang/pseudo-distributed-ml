@@ -88,6 +88,7 @@ class MANode(BaseNode):
     '''
     Model Averaging Node
     '''
+
     def get_results(self):
         return self.get_params()
 
@@ -102,6 +103,7 @@ class SSGDNode(BaseNode):
     '''
     Synchronous SGD
     '''
+
     def __init__(self):
         super(SSGDNode, self).__init__()
         self.__updates = None
@@ -144,6 +146,7 @@ class BMUFNode(BaseNode):
     Block-wise Model Update Filtering Node
     see https://www.microsoft.com/en-us/research/wp-content/uploads/2016/08/0005880.pdf
     '''
+
     def get_results(self):
         return self.get_params()
 

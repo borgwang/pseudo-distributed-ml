@@ -6,11 +6,9 @@
 
 
 from mpi4py import MPI
-import numpy as np
 import os
 import subprocess
 import sys
-import time
 import argparse
 
 from param_server import MAParamServer
