@@ -16,7 +16,7 @@ from node import MANode
 
 from communicator import WorkerComm
 from communicator import MasterComm
-from tinynn.utils.timing import Timer
+from tinynn.utils.timer import Timer
 
 COMM = MPI.COMM_WORLD
 SIZE = COMM.Get_size()
