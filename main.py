@@ -24,14 +24,14 @@ RANK = COMM.Get_rank()
 
 
 def mpi_run():
-    if os.getenv('IN_MPI') is None:
+    if os.getenv("IN_MPI") is None:
         # fork processes
         env = os.environ.copy()
-        env.update(IN_MPI='1')
-        mpi_cmd = ['mpirun', '-np', str(args.num_workers + 1), '--oversubscribe']
-        script = [sys.executable, '-u'] + sys.argv
+        env.update(IN_MPI="1")
+        mpi_cmd = ["mpirun", "-np", str(args.num_workers + 1), "--oversubscribe"]
+        script = [sys.executable, "-u"] + sys.argv
         cmd = mpi_cmd + script
-        print('RUNNING: %s' % (' '.join(cmd)))
+        print("RUNNING: %s" % (" ".join(cmd)))
         subprocess.check_call(cmd, env=env)
         sys.exit()  # admin process exit
     else:
@@ -40,10 +40,10 @@ def mpi_run():
 
 def main():
     if RANK == 0:
-        print('Master started. %d processes.' % SIZE)
+        print("Master started. %d processes." % SIZE)
         Master(COMM, RANK).run()
     else:
-        print('Worker-%d started. %d processes.' % (RANK, SIZE))
+        print("Worker-%d started. %d processes." % (RANK, SIZE))
         Worker(COMM, RANK).run()
 
 
@@ -57,42 +57,42 @@ class Master(object):
     def run(self):
         i = 0
         timer = {
-            'iter': Timer('iter'),
-            'distribute': Timer('distribute'),
-            'gather': Timer('gather'),
-            'update': Timer('update')
+            "iter": Timer("iter"),
+            "distribute": Timer("distribute"),
+            "gather": Timer("gather"),
+            "update": Timer("update")
         }
         # while True:
         for _ in range(args.num_epochs):
             i += 1
-            timer['iter'].start()
+            timer["iter"].start()
             params = self.param_server.get_params()
 
             # distribute contents
-            timer['distribute'].start()
+            timer["distribute"].start()
             self.comm.distribute(params.copy())
-            timer['distribute'].pause()
+            timer["distribute"].pause()
 
             # gather results
-            timer['gather'].start()
+            timer["gather"].start()
             local_results = self.comm.gather()
-            timer['gather'].pause()
+            timer["gather"].pause()
 
             # update global params
-            timer['update'].start()
+            timer["update"].start()
             self.param_server.update(local_results)
-            timer['update'].pause()
+            timer["update"].pause()
 
-            print('---------------')
-            print('{}-iteration'.format(i))
+            print("---------------")
+            print("{}-iteration".format(i))
             self.param_server.evaluate()
 
-            timer['iter'].pause()
+            timer["iter"].pause()
             if i % 2 == 0:
                 for t in timer.values():
                     t.report()
-        print('reach max num_epochs {}'.format(args.num_epochs))
-        print('exit')
+        print("reach max num_epochs {}".format(args.num_epochs))
+        print("exit")
 
 
 class Worker(object):
@@ -116,12 +116,12 @@ class Worker(object):
             self.comm.push_local_results(local_results)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--num_workers', type=int, default=4)
-    parser.add_argument('-s', '--seed', type=int, default=31, help='initial seed')
-    parser.add_argument('--num_epochs', type=int, default=10)
+    parser.add_argument("-n", "--num_workers", type=int, default=4)
+    parser.add_argument("-s", "--seed", type=int, default=31, help="initial seed")
+    parser.add_argument("--num_epochs", type=int, default=10)
     global args
     args = parser.parse_args()
-    assert args.num_workers > 0, 'Number of workers suppose to > 0.'
+    assert args.num_workers > 0, "Number of workers suppose to > 0."
     mpi_run()

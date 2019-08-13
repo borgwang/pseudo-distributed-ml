@@ -49,7 +49,7 @@ class BaseParamServer(object):
             loss_fn=CrossEntropyLoss(),
             optimizer=Adam())
         nn_model.initialize()
-        nn_model.set_phase('TEST')
+        nn_model.set_phase("TEST")
         return nn_model
 
     def update(self, local_results):
@@ -70,9 +70,9 @@ class BaseParamServer(object):
 
 
 class MAParamServer(BaseParamServer):
-    '''
+    """
     Model Averaging Parameter Server
-    '''
+    """
 
     def update(self, local_params):
         # averaging parameters
@@ -86,9 +86,9 @@ class MAParamServer(BaseParamServer):
 
 
 class SSGDParamServer(BaseParamServer):
-    '''
+    """
     Synchronous SGD Parameter Server
-    '''
+    """
 
     def update(self, local_grads):
         # averaging gradients
@@ -105,10 +105,10 @@ class SSGDParamServer(BaseParamServer):
 
 
 class EASGDParamServer(BaseParamServer):
-    '''
+    """
     Elastic Averaging SGD Parameter Server
     See https://arxiv.org/abs/1412.6651 for details
-    '''
+    """
 
     def __init__(self):
         super(EASGDParamServer, self).__init__()
@@ -134,10 +134,10 @@ class EASGDParamServer(BaseParamServer):
 
 
 class BMUFParamServer(BaseParamServer):
-    '''
+    """
     Block-wise Model Update Filtering ParamServer
     see https://www.microsoft.com/en-us/research/wp-content/uploads/2016/08/0005880.pdf
-    '''
+    """
 
     def __init__(self):
         super(EASGDParamServer, self).__init__()

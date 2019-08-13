@@ -37,8 +37,8 @@ class BaseNode(object):
         valid_x, valid_y = mnist.valid_data
         train_y = get_one_hot(train_y, 10)
         valid_y = get_one_hot(valid_y, 10)
-        dataset = {'train_x': train_x, 'train_y': train_y,
-                   'valid_x': valid_x, 'valid_y': valid_y}
+        dataset = {"train_x": train_x, "train_y": train_y,
+                   "valid_x": valid_x, "valid_y": valid_y}
 
         return dataset
 
@@ -52,7 +52,7 @@ class BaseNode(object):
             loss_fn=CrossEntropyLoss(),
             optimizer=Adam(learning_rate))
         nn_model.initialize()
-        nn_model.set_phase('TRAIN')
+        nn_model.set_phase("TRAIN")
         return nn_model
 
     def update(self, params):
@@ -67,7 +67,7 @@ class BaseNode(object):
         iterator = BatchIterator(batch_size=batch_size)
         evaluator = AccEvaluator()
 
-        for batch in iterator(self.dataset['train_x'], self.dataset['train_y']):
+        for batch in iterator(self.dataset["train_x"], self.dataset["train_y"]):
             pred = self.nn_model.forward(batch.inputs)
             loss, grads = self.nn_model.backward(pred, batch.targets)
             self.nn_model.apply_grad(grads)
@@ -85,9 +85,9 @@ class BaseNode(object):
 
 
 class MANode(BaseNode):
-    '''
+    """
     Model Averaging Node
-    '''
+    """
 
     def get_results(self):
         return self.get_params()
@@ -100,9 +100,9 @@ class MANode(BaseNode):
 
 
 class SSGDNode(BaseNode):
-    '''
+    """
     Synchronous SGD
-    '''
+    """
 
     def __init__(self):
         super(SSGDNode, self).__init__()
@@ -120,10 +120,10 @@ class SSGDNode(BaseNode):
 
 
 class EASGDNode(BaseNode):
-    '''
+    """
     Elastic Averaging SGD
     See https://arxiv.org/abs/1412.6651 for details
-    '''
+    """
     def get_results(self):
         return self.get_params()
 
@@ -142,10 +142,10 @@ class EASGDNode(BaseNode):
 
 
 class BMUFNode(BaseNode):
-    '''
+    """
     Block-wise Model Update Filtering Node
     see https://www.microsoft.com/en-us/research/wp-content/uploads/2016/08/0005880.pdf
-    '''
+    """
 
     def get_results(self):
         return self.get_params()
