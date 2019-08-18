@@ -4,11 +4,12 @@
 # Filename: main.py
 # Description: entry file
 
+import os
+import sys
+sys.path.append(os.path.abspath("./tinynn"))
 
 from mpi4py import MPI
-import os
 import subprocess
-import sys
 import argparse
 
 from param_server import MAParamServer
@@ -28,7 +29,7 @@ def mpi_run():
         # fork processes
         env = os.environ.copy()
         env.update(IN_MPI="1")
-        mpi_cmd = ["mpirun", "-np", str(args.num_workers + 1), "--oversubscribe"]
+        mpi_cmd = ["mpirun", "-np", str(args.num_workers + 1)]
         script = [sys.executable, "-u"] + sys.argv
         cmd = mpi_cmd + script
         print("RUNNING: %s" % (" ".join(cmd)))

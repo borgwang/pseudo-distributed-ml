@@ -6,19 +6,22 @@
 
 
 import copy
+
 import numpy as np
 
-from tinynn.data_processor.dataset import MNIST
-from tinynn.data_processor.data_iterator import BatchIterator
-from tinynn.core.nn import NeuralNet
-from tinynn.core.layers import Linear, ReLU
-from tinynn.core.loss import CrossEntropyLoss
-from tinynn.core.optimizer import Adam
+from communicator import decode
+from communicator import encode
+from config import architecture
+from config import dataset_dir
 from tinynn.core.evaluator import AccEvaluator
+from tinynn.core.layers import Dense
+from tinynn.core.layers import ReLU
+from tinynn.core.losses import SoftmaxCrossEntropyLoss
 from tinynn.core.model import Model
-
-from config import dataset_dir, architecture
-from communicator import decode, encode
+from tinynn.core.nn import Net
+from tinynn.core.optimizer import Adam
+from utils import prepare_dataset
+from config import dataset_dir
 
 
 def get_one_hot(targets, nb_classes):
@@ -29,26 +32,26 @@ class BaseParamServer(object):
 
     def __init__(self):
         self.test_x, self.test_y = self.load_test_data()
+        self.input_dim = self.test_x.shape[1]
+        self.output_dim = self.test_y.shape[1]
         self.nn_model = self.init_nn_model()
         self.momentum = None
 
     @staticmethod
     def load_test_data():
-        mnist = MNIST(dataset_dir)
-        test_x, test_y = mnist.test_data
+        train_set, valid_set, test_set = prepare_dataset(dataset_dir)
+        test_x, test_y = test_set
         test_y = get_one_hot(test_y, 10)
         return test_x, test_y
 
-    @staticmethod
-    def init_nn_model():
-        nn_model = Model(
-            net=NeuralNet([
-                    Linear(num_in=784, num_out=100),
-                    ReLU(),
-                    Linear(num_in=100, num_out=10)]),
-            loss_fn=CrossEntropyLoss(),
-            optimizer=Adam())
-        nn_model.initialize()
+    def init_nn_model(self):
+        hidden_units = 100
+        net = Net([
+            Dense(num_out=hidden_units, num_in=self.input_dim),
+            ReLU(),
+            Dense(num_out=self.output_dim, num_in=hidden_units)])
+        nn_model = Model(net, loss=SoftmaxCrossEntropyLoss(),
+                         optimizer=Adam())
         nn_model.set_phase("TEST")
         return nn_model
 
@@ -59,7 +62,7 @@ class BaseParamServer(object):
         test_preds = self.nn_model.forward(self.test_x)
         test_pred_idx = np.argmax(test_preds, axis=1)
         test_y_idx = np.argmax(self.test_y, axis=1)
-        res = AccEvaluator().eval(test_pred_idx, test_y_idx)
+        res = AccEvaluator().evaluate(test_pred_idx, test_y_idx)
         print(res)
 
     def get_params(self):

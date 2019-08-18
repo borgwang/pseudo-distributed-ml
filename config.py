@@ -4,7 +4,7 @@
 # Filename: config.py
 
 
-dataset_dir = "./data/"
+dataset_dir = "./data/mnist"
 model_dir = "./saved_models/"
 
 architecture = [(784, 100), (), (100, 10)]
