@@ -11,7 +11,6 @@ import numpy as np
 
 from communicator import decode
 from communicator import encode
-from config import architecture
 from config import dataset_dir
 from tinynn.core.evaluator import AccEvaluator
 from tinynn.core.layers import Dense
@@ -21,7 +20,6 @@ from tinynn.core.model import Model
 from tinynn.core.nn import Net
 from tinynn.core.optimizer import Adam
 from utils import prepare_dataset
-from config import dataset_dir
 
 
 def get_one_hot(targets, nb_classes):
@@ -143,7 +141,7 @@ class BMUFParamServer(BaseParamServer):
     """
 
     def __init__(self):
-        super(EASGDParamServer, self).__init__()
+        super(BMUFParamServer, self).__init__()
         self._grad_momentum = None
 
     def update(self, local_params):
